@@ -142,6 +142,7 @@ export const updateProfileWithBillData = (
   }
 
   // Update sustainability level based on performance
+  //check
   if (updatedProfile.performanceMetrics.overallScore >= 80) {
     updatedProfile.sustainabilityLevel = "Expert";
   } else if (updatedProfile.performanceMetrics.overallScore >= 60) {
