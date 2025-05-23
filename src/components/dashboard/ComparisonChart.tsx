@@ -23,21 +23,63 @@ const MONTHS = [
 const ComparisonChart: React.FC<ComparisonChartProps> = ({ billData, historicalData }) => {
   const [compareMonth, setCompareMonth] = useState<string>("");
   
+  // If there's no current bill data, show a message
+  if (!billData) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Monthly Comparison</CardTitle>
+          <CardDescription>Compare energy usage with previous months</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex items-center justify-center text-muted-foreground">
+            Please upload your current month's bill to enable comparison
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Filter historical data to only show months before the current bill
+  const validHistoricalData = historicalData.filter(data => {
+    const historicalDate = new Date(data.year, MONTHS.indexOf(data.month));
+    const currentDate = new Date(billData.year, MONTHS.indexOf(billData.month));
+    return historicalDate < currentDate;
+  });
+  
+  // If no historical data is available, show a message
+  if (validHistoricalData.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Monthly Comparison</CardTitle>
+          <CardDescription>Compare energy usage with previous months</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex flex-col items-center justify-center text-muted-foreground space-y-2">
+            <p>No previous months' data available for comparison</p>
+            <p className="text-sm">Historical data will appear here after you upload more bills</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   // Prepare current month data
-  const currentData = billData ? {
+  const currentData = {
     month: billData.month,
     year: billData.year,
     unitsConsumed: billData.unitsConsumed,
     amount: billData.amount,
-  } : null;
+  };
   
-  // Find the selected month's data
-  const selectedMonthData = historicalData.find(
+  // Find the selected month's data from valid historical data
+  const selectedMonthData = validHistoricalData.find(
     (data) => `${data.month} ${data.year}` === compareMonth
   );
   
   // Prepare comparison data for the chart
-  const comparisonData = currentData ? [
+  const comparisonData = [
     {
       name: `${currentData.month} ${currentData.year}`,
       unitsConsumed: currentData.unitsConsumed,
@@ -50,18 +92,18 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({ billData, historicalD
       amount: selectedMonthData.amount,
       current: false,
     }] : []),
-  ] : [];
+  ];
   
   // Calculate percentage difference if both current and comparison data exist
   let percentageDifference = null;
-  if (currentData && selectedMonthData) {
+  if (selectedMonthData) {
     const diff = currentData.unitsConsumed - selectedMonthData.unitsConsumed;
     percentageDifference = (diff / selectedMonthData.unitsConsumed) * 100;
   }
 
-  // Color configuration
-  const currentColor = "#22d3ee"; // cyan-400
-  const compareColor = "#a78bfa"; // violet-400
+  // Color configuration - using our new primary color
+  const currentColor = "hsl(var(--primary))";
+  const compareColor = "hsl(var(--secondary))";
 
   return (
     <Card className="w-full">
@@ -76,7 +118,7 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({ billData, historicalD
               <SelectValue placeholder="Select month" />
             </SelectTrigger>
             <SelectContent>
-              {historicalData.map((data) => (
+              {validHistoricalData.map((data) => (
                 <SelectItem 
                   key={`${data.month}-${data.year}`} 
                   value={`${data.month} ${data.year}`}
